@@ -1,13 +1,37 @@
-def count_calories(test_file, top_n=1):
-    calorie_totals = [0]
+def count_calories_1(test_file, top_n=1):
     with open(test_file) as f:
-        for line in f.readlines():
-            if line != '\n':
-                calorie_totals[-1] += int(line)
-            else:
-                calorie_totals.append(0)
+        calories = [
+            sum([int(snack) for snack in elf.split('\n')])
+            for elf in f.read().split('\n\n')
+        ]
+        return sum(sorted(calories)[-top_n:])
 
-    return sum(sorted(calorie_totals)[-top_n:])
+
+def count_calories2(test_file, top_n=1):
+    with open(test_file) as f:
+        elf_supplies = []
+        snacks_so_far = 0
+        for snack in f.readlines():
+            if snack == '\n':
+                elf_supplies.append(snacks_so_far)
+                snacks_so_far = 0
+            else:
+                snacks_so_far += int(snack)
+        elf_supplies.append(snacks_so_far)
+
+        return sum(sorted(elf_supplies)[-top_n:])
+
+
+def count_calories(test_file, top_n=1):
+    with open(test_file) as f:
+        elf_supplies = [0]
+        for snack in f.readlines():
+            if snack == '\n':
+                elf_supplies.append(0)
+            else:
+                elf_supplies[-1] += int(snack)
+
+        return sum(sorted(elf_supplies)[-top_n:])
 
 
 def test__calorie_count():
