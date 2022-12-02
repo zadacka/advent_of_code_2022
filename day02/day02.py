@@ -2,30 +2,31 @@ def part_one_score_function(my_move, their_move):
     their_move = {'A': 'rock', 'B': 'paper', 'C': 'scissors'}[their_move]
     my_move = {'X': 'rock', 'Y': 'paper', 'Z': 'scissors'}[my_move]
 
-    loss, draw, win = 0, 3, 6
-    outcome_scores = {
-        ('rock', 'rock'): draw,
-        ('paper', 'paper'): draw,
-        ('scissors', 'scissors'): draw,
+    outcomes = {
+        ('rock', 'rock'): 'draw',
+        ('rock', 'paper'): 'lose',
+        ('rock', 'scissors'): 'win',
 
-        ('rock', 'paper'): loss,
-        ('rock', 'scissors'): win,
+        ('paper', 'rock'): 'win',
+        ('paper', 'paper'): 'draw',
+        ('paper', 'scissors'): 'lose',
 
-        ('paper', 'rock'): win,
-        ('paper', 'scissors'): loss,
-
-        ('scissors', 'rock'): loss,
-        ('scissors', 'paper'): win,
+        ('scissors', 'rock'): 'lose',
+        ('scissors', 'paper'): 'win',
+        ('scissors', 'scissors'): 'draw',
     }
+    outcome_scores = {'lose': 0, 'draw': 3, 'win': 6}
     choice_scores = {'rock': 1, 'paper': 2, 'scissors': 3}
 
-    return outcome_scores[(my_move, their_move)] + choice_scores[my_move]
+    game_outcome = outcomes[(my_move, their_move)]
+
+    return outcome_scores[game_outcome] + choice_scores[my_move]
 
 
 def part_two_score_function(target_outcome, their_move):
     their_move = {'A': 'rock', 'B': 'paper', 'C': 'scissors'}[their_move]
     target_outcome = {'X': 'lose', 'Y': 'draw', 'Z': 'win'}[target_outcome]
-    my_move = {
+    move_required = {
         ('rock', 'lose'): 'scissors',
         ('rock', 'draw'): 'rock',
         ('rock', 'win'): 'paper',
@@ -35,7 +36,8 @@ def part_two_score_function(target_outcome, their_move):
         ('scissors', 'lose'): 'paper',
         ('scissors', 'draw'): 'scissors',
         ('scissors', 'win'): 'rock',
-    }[(their_move, target_outcome)]
+    }
+    my_move = move_required[(their_move, target_outcome)]
 
     result_scores = {'lose': 0, 'draw': 3, 'win': 6}
     choice_scores = {'rock': 1, 'paper': 2, 'scissors': 3}
