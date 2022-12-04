@@ -16,6 +16,7 @@ def find_common_items(backpack):
 
 
 def grouper(size, iterable):
+    """ Taken from a Raymond Hettinger answer to a StackOverflow question"""
     it = iter(iterable)
     while True:
         group = tuple(itertools.islice(it, None, size))
