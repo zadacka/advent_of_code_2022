@@ -14,6 +14,7 @@ class Monkey:
         self.target_if_true = target_if_true
         self.target_if_false = target_if_false
         self.times_inspect_called = 0
+        self.worry_limit = None
 
     def __eq__(self, other):
         return all([
@@ -40,9 +41,16 @@ class Monkey:
                 'itself' if operand == item else operand, new_item_value))
         else:
             raise RuntimeError("Don't know how to handle op: {}".format(self.op))
-        bored_value = math.floor(new_item_value / 3)
-        print("    Monkey gets bored with item. Worry level is divided by 3 to {}.".format(bored_value))
-        q, mod = divmod(bored_value, self.test_divisor)
+
+        if self.worry_limit:
+            _, modulus = divmod(new_item_value, self.worry_limit)
+            bored_value = modulus
+            print("    Monkey gets bored with item. Worry level limited mod worry limit {}.".format(self.worry_limit))
+        else:
+            bored_value = math.floor(new_item_value / 3)
+            print("    Monkey gets bored with item. Worry level is divided by 3 to {}.".format(bored_value))
+
+        quotient, mod = divmod(bored_value, self.test_divisor)
         if mod == 0:
             print("    Current worry level is divisible by {}.".format(self.test_divisor))
             print("    Item with worry level {} is thrown to monkey {}.".format(bored_value, self.target_if_true))
@@ -52,6 +60,9 @@ class Monkey:
             print("    Item with worry level {} is thrown to monkey {}.".format(bored_value, self.target_if_false))
             target = self.target_if_false
         return bored_value, target
+
+    def set_worry_limit(self, worry_limit):
+        self.worry_limit = worry_limit
 
 
 def test__monkey_equality():
@@ -120,7 +131,6 @@ def test__parse_monkeys():
 
 
 def process_items(monkeys, rounds=1):
-
     for round in range(rounds):
         for monkey_number, monkey in enumerate(monkeys):
             print("Monkey {}:".format(monkey_number))
@@ -213,7 +223,8 @@ Monkey 3:
     assert expected_story == mock_stdout.getvalue()
 
 
-def test__process_twenty_rounds():
+@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+def test__process_twenty_rounds(mock_stdout):
     monkeys = parse_monkeys('day11_test_input.txt')
     state = process_items(monkeys, rounds=20)
     monkey_activity = [monkey.times_inspect_called for monkey in state]
@@ -223,10 +234,49 @@ def test__process_twenty_rounds():
     assert 10605 == monkey_business
 
 
-def test__part1():
+@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+def test__part1(mock_stdout):
     monkeys = parse_monkeys('day11_real_input.txt')
     state = process_items(monkeys, rounds=20)
+    assert 76728 == calculate_monkey_business_score(state)
+
+
+def calculate_monkey_business_score(state):
     monkey_activity = [monkey.times_inspect_called for monkey in state]
     sorted_monkey_activity = list(sorted(monkey_activity))
     monkey_business = sorted_monkey_activity[-1] * sorted_monkey_activity[-2]
-    assert 76728 == monkey_business
+    return monkey_business
+
+
+@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+def test__using_a_worry_limit(mock_stdout):
+    monkeys = parse_monkeys('day11_test_input.txt')
+    worry_limit = math.prod([monkey.test_divisor for monkey in monkeys])
+    for monkey in monkeys:
+        monkey.set_worry_limit(worry_limit)
+
+    state = process_items(monkeys, rounds=1)
+    assert [2, 4, 3, 6] == [monkey.times_inspect_called for monkey in monkeys]
+
+    state = process_items(state, rounds=19)
+    assert [99, 97, 8, 103] == [monkey.times_inspect_called for monkey in monkeys]
+
+    state = process_items(state, rounds=980)
+    assert [5204, 4792, 199, 5192] == [monkey.times_inspect_called for monkey in monkeys]
+
+    state = process_items(state, rounds=1000)
+    assert [10419, 9577, 392, 10391] == [monkey.times_inspect_called for monkey in monkeys]
+
+    state = process_items(state, rounds=8000)
+    assert [52166, 47830, 1938, 52013] == [monkey.times_inspect_called for monkey in monkeys]
+
+
+@unittest.mock.patch('sys.stdout', new_callable=io.StringIO)
+def test__part2(mock_stdout):
+    monkeys = parse_monkeys('day11_real_input.txt')
+    worry_limit = math.prod([monkey.test_divisor for monkey in monkeys])
+    for monkey in monkeys:
+        monkey.set_worry_limit(worry_limit)
+
+    state = process_items(monkeys, rounds=10000)
+    assert 21553910156 == calculate_monkey_business_score(state)
