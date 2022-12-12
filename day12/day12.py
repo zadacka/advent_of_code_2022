@@ -13,12 +13,12 @@ def load_map(input_file):
     return [[character for character in string.strip()] for string in lines]
 
 
-def find_start(heightmap):
+def find_target(heightmap, target='S'):
     for row, line in enumerate(heightmap):
         for column, item in enumerate(line):
-            if item == 'S':
-                return (row, column)
-    raise RuntimeError('Start Cell not found.')
+            if item == target:
+                return row, column
+    raise RuntimeError('Target {} Cell not found.'.format(target))
 
 
 def test__load_map():
@@ -26,7 +26,7 @@ def test__load_map():
 
 
 def test__find_start():
-    assert (0, 0) == find_start(TEST_HEIGHT_MAP)
+    assert (0, 0) == find_target(TEST_HEIGHT_MAP, target='S')
 
 
 def is_reachable(start, end, height_map):
@@ -54,30 +54,31 @@ def next_step_options(route_so_far, height_map):
     return filtered_positions
 
 
-def _find_route(route_so_far, height_map):
-    end_x, end_y = route_so_far[-1]
-    if height_map[end_y][end_x] == 'E':
-        return route_so_far  # we have reached the end!
-
-    candidate_next_steps = next_step_options(route_so_far, height_map)
-    if not candidate_next_steps:
+def _find_route(route, height_map, target, viable_routes):
+    if route[-1] == target:
+        viable_routes.append(route)  # we have reached the end!
         return None
 
-    viable_routes = []
-    for next_step in candidate_next_steps:
-        updated_route = [point for point in route_so_far] + [next_step]
-        another_route = _find_route(updated_route, height_map)
-        if another_route is not None:
-            viable_routes.append(another_route)
-    if viable_routes:
-        return min(viable_routes, key=len)
-    return None  # no route found
+    def nearest_end(point):
+        px, py = point
+        tx, ty = target
+        return (ty - py) ** 2 + (tx - px) ** 2
+
+    next_steps = next_step_options(route, height_map)
+    next_steps = sorted(next_steps, key=nearest_end)
+
+    for next_step in next_steps:
+        attempt = [point for point in route] + [next_step]
+        _find_route(attempt, height_map, target, viable_routes)
 
 
 def find_route(input_filename):
     height_map = load_map(input_filename)
-    start_position = find_start(height_map)
-    return _find_route([start_position, ], height_map)
+    start_position = find_target(height_map, target='S')
+    end_position = find_target(height_map, target='E')
+    viable_routes = []
+    _find_route([start_position, ], height_map, target=end_position, viable_routes=viable_routes)
+    return min(viable_routes, key=len)
 
 
 def test__find_route():
@@ -87,6 +88,7 @@ def test__find_route():
 def test__find_next_step_options():
     assert [(1, 0), (0, 1)] == next_step_options([(0, 0)], TEST_HEIGHT_MAP)
     assert [(0, 3)] == next_step_options([(0, 0), (0, 1), (0, 2)], TEST_HEIGHT_MAP)
+
 
 def test__part1():
     assert 0 == len(find_route('day12_real_input.txt')) - 1
