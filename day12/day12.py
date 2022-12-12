@@ -1,3 +1,5 @@
+from collections import deque
+
 TEST_HEIGHT_MAP = [
     ['S', 'a', 'b', 'q', 'p', 'o', 'n', 'm'],
     ['a', 'b', 'c', 'r', 'y', 'x', 'x', 'l'],
@@ -17,7 +19,7 @@ def find_target(heightmap, target='S'):
     for row, line in enumerate(heightmap):
         for column, item in enumerate(line):
             if item == target:
-                return row, column
+                return column, row
     raise RuntimeError('Target {} Cell not found.'.format(target))
 
 
@@ -40,55 +42,76 @@ def is_reachable(start, end, height_map):
     return end_height <= (start_height + 1)
 
 
-def next_step_options(route_so_far, height_map):
-    x, y = route_so_far[-1]
+def next_step_options(start, height_map, visited):
+    x, y = start
     candidate_positions = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]
     max_x = len(height_map[0])
     max_y = len(height_map)
     filtered_positions = [
         point
         for point in candidate_positions
-        if 0 <= point[0] < max_x and 0 <= point[1] < max_y and point not in route_so_far
+        if 0 <= point[0] < max_x and 0 <= point[1] < max_y and point not in visited
            and is_reachable((x, y), point, height_map)
     ]
     return filtered_positions
 
 
-def _find_route(route, height_map, target, viable_routes):
-    if route[-1] == target:
-        viable_routes.append(route)  # we have reached the end!
-        return None
-
-    def nearest_end(point):
-        px, py = point
-        tx, ty = target
-        return (ty - py) ** 2 + (tx - px) ** 2
-
-    next_steps = next_step_options(route, height_map)
-    next_steps = sorted(next_steps, key=nearest_end)
-
-    for next_step in next_steps:
-        attempt = [point for point in route] + [next_step]
-        _find_route(attempt, height_map, target, viable_routes)
+def bfs(start_position, end_position, height_map):
+    visited = set()
+    distance_values = {start_position: 0}
+    queue = [start_position]
+    while queue:
+        this = queue.pop(0)
+        if this not in visited:
+            visited.add(this)
+            for next_pos in next_step_options(this, height_map, visited):
+                distance_value = distance_values[this] + 1
+                distance_values[next_pos] = distance_value
+                if next_pos == end_position:
+                    return distance_value
+                queue.append(next_pos)
 
 
 def find_route(input_filename):
     height_map = load_map(input_filename)
     start_position = find_target(height_map, target='S')
     end_position = find_target(height_map, target='E')
-    viable_routes = []
-    _find_route([start_position, ], height_map, target=end_position, viable_routes=viable_routes)
-    return min(viable_routes, key=len)
+    return bfs(start_position, end_position, height_map)
 
 
 def test__find_route():
-    assert 31 == len(find_route('day12_test_input.txt')) - 1
+    assert 31 == find_route('day12_test_input.txt')
 
 
 def test__find_next_step_options():
-    assert [(1, 0), (0, 1)] == next_step_options([(0, 0)], TEST_HEIGHT_MAP)
-    assert [(0, 3)] == next_step_options([(0, 0), (0, 1), (0, 2)], TEST_HEIGHT_MAP)
+    assert [(1, 0), (0, 1)] == next_step_options((0, 0), TEST_HEIGHT_MAP, set())
+    assert [(0, 3)] == next_step_options((0, 2), TEST_HEIGHT_MAP, {(0, 1), })
+
+
+def minimum_path(input_filename):
+    height_map = load_map(input_filename)
+    start_positions = [
+        (column, row)
+        for row, line in enumerate(height_map)
+        for column, item in enumerate(line)
+        if item == 'a'
+    ]
+    end_position = find_target(height_map, target='E')
+    route_lengths = {
+        start: bfs(start, end_position, height_map)
+        for start in start_positions
+    }
+    return min(v for v in route_lengths.values() if v is not None)
+
+
+def test__minimum_path():
+    assert 29 == minimum_path('day12_test_input.txt')
 
 
 def test__part1():
-    assert 0 == len(find_route('day12_real_input.txt')) - 1
+    assert 534 == find_route('day12_real_input.txt')
+
+
+def test__part2():
+    """ takes about 10 seconds ... """
+    assert 525 == minimum_path('day12_real_input.txt')
