@@ -1,3 +1,5 @@
+import itertools
+from functools import cmp_to_key
 from json import loads
 
 
@@ -66,6 +68,23 @@ def count_correct_index_values(input_file):
     result = sum(index for index, check in enumerate(results, start=1) if check == 1)
     return result
 
+
 def test__part1():
     assert 13 == count_correct_index_values('day13_test_input.txt')
     assert 5366 == count_correct_index_values('day13_real_input.txt')
+
+
+def test__part2():
+    assert 140 == find_decoder_key('day13_test_input.txt')
+    assert 23391 == find_decoder_key('day13_real_input.txt')
+
+
+def find_decoder_key(input_filename):
+    pairs = load_pairs_input(input_filename)
+    key1 = [[2]]
+    key2 = [[6]]
+    flattened = [pair[0] for pair in pairs] + [pair[1] for pair in pairs] + [key1] + [key2]
+    flattened = sorted(flattened, key=cmp_to_key(check_correct_order), reverse=True)
+    first_key = [index for index, item in enumerate(flattened, start=1) if item == key1][0]
+    second_key = [index for index, item in enumerate(flattened, start=1) if item == key2][0]
+    return first_key * second_key
