@@ -81,10 +81,8 @@ def test__part2():
 
 def find_decoder_key(input_filename):
     pairs = load_pairs_input(input_filename)
-    key1 = [[2]]
-    key2 = [[6]]
-    flattened = [pair[0] for pair in pairs] + [pair[1] for pair in pairs] + [key1] + [key2]
+    markers = [[[2]], [[6]]]
+    flattened = [pair[0] for pair in pairs] + [pair[1] for pair in pairs] + markers
     flattened = sorted(flattened, key=cmp_to_key(check_correct_order), reverse=True)
-    first_key = [index for index, item in enumerate(flattened, start=1) if item == key1][0]
-    second_key = [index for index, item in enumerate(flattened, start=1) if item == key2][0]
-    return first_key * second_key
+    idx1, idx2 = [flattened.index(m) for m in markers]
+    return (idx1 + 1) * (idx2 + 1)
