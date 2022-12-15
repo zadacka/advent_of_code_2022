@@ -74,8 +74,17 @@ class Reservoir:
         x, y = (500, 0)
         blocked_spaces = self.rocks.union(self.sand)
         while True:
-            if x < self.min_x or x > self.max_x or y > self.max_y:
+
+            if floor_exists:
+                if y == self.max_y + 1:
+                    self.sand.add((x, y))  # stop! You've hit the floor
+                    return True
+                if {(499, 1), (500, 1), (501, 1)}.issubset(self.sand):
+                    return False
+            elif x < self.min_x or x > self.max_x or y > self.max_y:
                 return False
+            else:
+                pass
 
             if (x, y + 1) not in blocked_spaces:
                 y += 1
@@ -88,6 +97,7 @@ class Reservoir:
             else:
                 self.sand.add((x, y))
                 return True
+
 
 def test__draw_map():
     reservoir = Reservoir(TEST_ROCKS)
@@ -104,18 +114,38 @@ def test__draw_map():
 #########.
 """
 
+
 def test__adding_sand():
     test_formations = load_rocks('day14_test_input.txt')
     reservoir = Reservoir(test_formations)
     sand_added = 0
-    while(reservoir.add_sand()):
+    while (reservoir.add_sand()):
         sand_added += 1
     assert 24 == sand_added
 
-def test__adding_sand():
+
+def test__adding_sand_floor_mode():
+    test_formations = load_rocks('day14_test_input.txt')
+    reservoir = Reservoir(test_formations)
+    sand_added = 0
+    while (reservoir.add_sand(floor_exists=True)):
+        sand_added += 1
+    print(reservoir.draw_reservoir())
+    assert 93 == sand_added + 1
+
+
+def test__part1():
     test_formations = load_rocks('day14_real_input.txt')
     reservoir = Reservoir(test_formations)
     sand_added = 0
-    while(reservoir.add_sand()):
+    while (reservoir.add_sand()):
         sand_added += 1
-    assert 24 == sand_added
+    assert 683 == sand_added
+
+def test__part2():
+    test_formations = load_rocks('day14_real_input.txt')
+    reservoir = Reservoir(test_formations)
+    sand_added = 0
+    while (reservoir.add_sand(floor_exists=True)):
+        sand_added += 1
+    assert 28821 == sand_added + 1
